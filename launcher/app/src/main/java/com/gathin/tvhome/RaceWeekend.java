@@ -127,9 +127,14 @@ final class RaceWeekend {
 
     /** The weekend {@code now} falls in, or null when no race is near. */
     static State at(List<Race> calendar, Instant now) {
+        return at(calendar, now, false);
+    }
+
+    /** With {@code always}, the next race that has not finished, however far off (config.xml race_always_on). */
+    static State at(List<Race> calendar, Instant now, boolean always) {
         for (Race race : calendar) {
             if (race.sessions.isEmpty()) continue;
-            Instant opens = race.sessions.get(0).start.minus(LEAD);
+            Instant opens = always ? Instant.MIN : race.sessions.get(0).start.minus(LEAD);
             Instant closes = race.sessions.get(race.sessions.size() - 1).start.plus(TAIL);
             if (now.isBefore(opens) || !now.isBefore(closes)) continue;
 

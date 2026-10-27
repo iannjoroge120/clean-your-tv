@@ -1,0 +1,3 @@
+# batch 4: off by owner's choice (Assistant, Chromecast, mirroring kept)
+com.google.android.play.games
+com.google.android.youtube.tvmusic

@@ -190,6 +190,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private boolean lunar;
     private int lunarOffset;
     private TextView stats;
+    /** config.xml weather_latitude; null: the weather line is off. */
+    private TextView weather;
+    private long weatherFetchedAt;
+    private boolean weatherFetching;
     private List<RaceWeekend.Race> raceCalendar;
     private View racePanel;
     private TextView raceKicker, raceHeadline, raceSessions;
@@ -374,6 +378,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         public void run() {
             updateGreeting();
             updateRace();
+            refreshWeather();
             // The pill follows the network callbacks and each return to Home; only the diya's flame follows the
             // signal level, so only it needs this minute's binder calls (about 7 ms on the UI thread).
             if (festive) updateWifiLabel();
@@ -388,6 +393,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        CastKeepAlive.bind(this);
         setContentView(R.layout.activity_main);
         density = getResources().getDisplayMetrics().density;
         // config.xml, overlaid by config.json from a pushed theme (see Config and tools/theme.sh).
@@ -491,6 +497,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         btnWifi = findViewById(R.id.btnWifi);
         shamsiDate = findViewById(R.id.shamsiDate);
         stats = findViewById(R.id.stats);
+        if (!getString(R.string.weather_latitude).trim().isEmpty()) weather = findViewById(R.id.weather);
         raceCalendar = cfg.raceCalendar;
         racePanel = findViewById(R.id.racePanel);
         raceKicker = findViewById(R.id.raceKicker);
@@ -986,6 +993,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             pillsShown = true;
         }
         if (showStats) startStats();
+        refreshWeather();
         sky.update();
         wallpaperPlayer.start();
         handler.postDelayed(minuteTick, MINUTE_MS);
@@ -1162,6 +1170,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         ambient.animate().cancel();
         heroArt.animate().cancel();
         handler.removeCallbacks(minuteTick);
+        handler.removeCallbacks(raceRotate);
         stopStats();
         if (diya != null) diya.stop();
         cancelPendingFocusScroll();
@@ -2053,6 +2062,29 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         else glass.setAlpha(0f);
     }
 
+    // ---- optional weather line (config.xml weather_latitude) -----------------------------------------
+
+    /** Fetches off the main thread when the last line is over an hour old; a failed fetch keeps the old line. */
+    private void refreshWeather() {
+        if (weather == null || weatherFetching) return;
+        if (weatherFetchedAt != 0 && SystemClock.elapsedRealtime() - weatherFetchedAt < Weather.REFRESH_MS) return;
+        weatherFetching = true;
+        String lat = getString(R.string.weather_latitude).trim();
+        String lon = getString(R.string.weather_longitude).trim();
+        String place = getString(R.string.weather_place).trim();
+        boolean f = getResources().getBoolean(R.bool.weather_fahrenheit);
+        new Thread(() -> {
+            String line = Weather.fetchLine(lat, lon, place, f);
+            handler.post(() -> {
+                weatherFetching = false;
+                if (line == null) return;      // try again on the next minute tick
+                weatherFetchedAt = SystemClock.elapsedRealtime();
+                weather.setText(line);
+                weather.setVisibility(View.VISIBLE);
+            });
+        }, "weather").start();
+    }
+
     // ---- optional system stats (config.xml show_stats) --------------------------------------------
 
     /** Background reader. Started only while Home is resumed and show_stats is on. */
@@ -2543,12 +2575,17 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
      */
     private void updateRace() {
         // an empty calendar (a theme without race_calendar, or a reset) hides a panel the last theme showed
-        RaceWeekend.State s = raceCalendar.isEmpty() ? null : RaceWeekend.at(raceCalendar, java.time.Instant.now());
+        RaceWeekend.State s = raceCalendar.isEmpty() ? null : RaceWeekend.at(raceCalendar, java.time.Instant.now(),
+                getResources().getBoolean(R.bool.race_always_on));
         if (s == null) {
             racePanel.setVisibility(View.GONE);
             return;
         }
         RaceWeekend.Race race = s.race;
+        if (getResources().getBoolean(R.bool.race_one_line)) {
+            showRaceLine(s);
+            return;
+        }
         raceKicker.setText(race.place.isEmpty()
                 ? getString(R.string.race_kicker_no_place, race.round, race.shortName())
                 : getString(R.string.race_kicker, race.round, race.shortName(), race.place));
@@ -2586,6 +2623,48 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         }
         raceSessions.setText(row);
         racePanel.setVisibility(View.VISIBLE);
+    }
+
+    /** race_one_line: the panel's kicker alone, alternating "GP · next session in 3d 0h" and "GP · race day and time". */
+    private String[] raceLines = new String[0];
+    private int raceLineIndex;
+    private final Runnable raceRotate = new Runnable() {
+        @Override
+        public void run() {
+            if (raceLines.length < 2 || racePanel.getVisibility() != View.VISIBLE) return;
+            raceLineIndex = (raceLineIndex + 1) % raceLines.length;
+            raceKicker.animate().cancel();
+            raceKicker.animate().alpha(0f).setDuration(250).withEndAction(() -> {
+                raceKicker.setText(raceLines[raceLineIndex % raceLines.length]);
+                raceKicker.animate().alpha(1f).setDuration(250).start();
+            }).start();
+            handler.postDelayed(this, RACE_ROTATE_MS);
+        }
+    };
+    private static final long RACE_ROTATE_MS = 8000;
+
+    private void showRaceLine(RaceWeekend.State s) {
+        RaceWeekend.Race race = s.race;
+        String gp = race.shortName();
+        String now;
+        if (s.live != null) now = getString(R.string.race_live, s.live.title(getResources()));
+        else if (s.next != null) now = getString(R.string.race_next, s.next.title(getResources()),
+                RaceWeekend.countdown(getResources(), s.untilNext));
+        else now = getString(R.string.race_finished);
+        RaceWeekend.Session last = race.sessions.get(race.sessions.size() - 1);
+        java.time.format.DateTimeFormatter when = java.time.format.DateTimeFormatter.ofPattern(
+                android.text.format.DateFormat.is24HourFormat(this) ? "EEE HH:mm" : "EEE h:mm a", Locale.getDefault())
+                .withZone(java.time.ZoneId.systemDefault());
+        String raceAt = last.shortName(getResources()) + " " + when.format(last.start);
+        raceLines = (s.next != null && s.next != last) || s.live != null
+                ? new String[] {gp + "  ·  " + now, gp + "  ·  " + raceAt}
+                : new String[] {gp + "  ·  " + now};
+        raceHeadline.setVisibility(View.GONE);
+        raceSessions.setVisibility(View.GONE);
+        raceKicker.setText(raceLines[raceLineIndex % raceLines.length]);
+        racePanel.setVisibility(View.VISIBLE);
+        handler.removeCallbacks(raceRotate);
+        if (raceLines.length > 1) handler.postDelayed(raceRotate, RACE_ROTATE_MS);
     }
 
     private void refreshPillsAfterNextDraw() {

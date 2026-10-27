@@ -8,6 +8,8 @@
     <uses-feature android:name="android.hardware.location.gps" android:required="false" />
 
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Only for the optional weather line (config.xml weather_latitude); nothing is fetched while it is empty. -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <!-- Needed since Android 10 to read the Wi-Fi network name for the network pill. Never requested at
          runtime: build-and-install grants it with pm grant, so lint's Android 12 "ask for COARSE with
@@ -65,6 +67,8 @@
         <package android:name="com.xiaomi.mitv.settings" />
         <package android:name="com.tcl.settings" />
         <package android:name="com.amazon.tv.launcher" />
+        <!-- The Cast receiver, bound by CastKeepAlive so the freezer leaves it alone with launcherx off. -->
+        <package android:name="com.google.android.apps.mediashell" />
         <!-- Coocaa OS sources for the Inputs menu (coocaa_sources); see CoocaaSources. -->
         <provider android:authorities="com.skyworth.tv.provider" />
         <provider android:authorities="com.skyworth.tv.sdk.provider" />

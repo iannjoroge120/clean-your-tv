@@ -1,0 +1,2 @@
+# batch 5: second Home claimant on Google TV
+com.google.android.tungsten.setupwraith

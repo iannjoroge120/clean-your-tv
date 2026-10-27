@@ -17,10 +17,9 @@
 
     <!-- Apps pinned to the dock row at the bottom, in this order. Missing apps are skipped. -->
     <string-array name="dock_apps">
-        <item>com.netflix.ninja</item>
-        <item>com.amazon.amazonvideo.livingroom</item>
+        <item>org.smarttube.stable</item>
         <item>com.google.android.youtube.tv</item>
-        <item>in.startv.hotstar</item>
+        <item>com.apple.atve.androidtv.appletv</item>
     </string-array>
     <!-- With fewer dock_apps than columns (or a dock app that is not installed), the free dock slots take
          the first grid apps, so the dock never shows a gap. false leaves them empty (#162); a theme can
@@ -29,12 +28,12 @@
 
     <!-- Apps never shown as tiles (e.g. the Live TV app, which the Inputs menu already covers). -->
     <string-array name="hidden_apps">
+        <item>com.tcl.tv</item>
         <item>com.mediatek.wwtv.tvcenter</item>
-        <item>com.mitv.gallery</item>
     </string-array>
 
     <!-- The TV's Live TV / tuner app, offered at the end of the Inputs menu. Leave empty to omit. -->
-    <string name="live_tv_package" translatable="false">com.mediatek.wwtv.tvcenter</string>
+    <string name="live_tv_package" translatable="false">com.tcl.tv</string>
 
     <!-- Open the Live TV app above the first time Home comes up after the TV is switched on, for sets that are
          mostly used for broadcast TV. Once per boot: Home after that stays Home. Can also be set with
@@ -197,6 +196,11 @@
          where the firmware hands KEYCODE_GUIDE (172) to the stock launcher and no app ever receives it. Leave empty
          to omit. -->
     <string-array name="app_keys" translatable="false">
+        <item>4062:com.netflix.ninja</item>
+        <item>190:com.google.android.youtube.tv</item>
+        <item>4099:com.amazon.amazonvideo.livingroom</item>
+        <item>4160:com.apple.atve.androidtv.appletv</item>
+        <item>83:settings</item>
     </string-array>
 
     <!-- Package of the stock launcher, for TVs whose firmware turns it back on after it was disabled. XGIMI's
@@ -411,6 +415,20 @@
     <!-- One line under the clock: CPU, free memory and free storage. Off by default; a theme can set
          "show_stats": true. Nothing is read, and the clock does not move, while this is false. -->
     <bool name="show_stats">false</bool>
+
+    <!-- One line of current weather under the clock, from Open-Meteo (no key, no account), refreshed at most once an
+         hour while Home is on screen. Decimal degrees; an empty latitude keeps it off and nothing is fetched. -->
+    <string name="weather_latitude" translatable="false">-1.2864</string>
+    <string name="weather_longitude" translatable="false">36.8172</string>
+    <string name="weather_place" translatable="false">Nairobi</string>
+    <bool name="weather_fahrenheit">false</bool>
+
+    <!-- With race_calendar set: true keeps the F1 panel under the clock all the time, showing the next race and
+         its countdown, instead of only from 12 hours before a weekend. -->
+    <bool name="race_always_on">true</bool>
+    <!-- true: the F1 panel is one small line that alternates the next session's countdown and the race time,
+         instead of the headline and the row of sessions. -->
+    <bool name="race_one_line">true</bool>
 
     <!-- Time-of-day backdrop behind everything: a dark gradient that follows the clock, with a warm
          horizon glow around sunrise and sunset. 0 keeps the plain background (the default); 1 to 100

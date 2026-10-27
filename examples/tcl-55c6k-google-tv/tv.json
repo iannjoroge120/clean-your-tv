@@ -1,0 +1,6 @@
+{
+  "tv": "TCL 55C6K (Smart TV Pro, G08, G08_4K_GB, MediaTek tcl9618), Kenya",
+  "os": "Google TV 14",
+  "brand": "TCL",
+  "notes": "Same firmware as the 65C6K list (UTT2.250416.001 AU02); that list less Google Assistant (kept), plus an unlabelled sideloaded app that started at boot; YouTube Music and Play Games off by choice; Chromecast, AirPlay, Miracast and T-Cast kept; launcher in redirect mode (launcherx enabled, stock_home_redirect, HomeKeyService only, key_filter false) so profiles, the remote's app buttons and the held-volume ramp all work; reboot-checked"
+}

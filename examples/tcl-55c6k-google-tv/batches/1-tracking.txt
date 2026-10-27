@@ -1,0 +1,9 @@
+# batch 1: TCL tracking, feedback, Android 14 ad services, hidden app
+com.tcl.logkit
+com.tcl.usercenter
+com.google.android.feedback
+com.android.tv.feedbackconsent
+com.android.adservices.api
+com.android.ondevicepersonalization.services
+com.android.federatedcompute.services
+itffnd.ywrmngcu.vuvbs

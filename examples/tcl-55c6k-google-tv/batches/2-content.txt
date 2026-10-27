@@ -1,0 +1,10 @@
+# batch 2: TCL content, ads, promos
+com.tcl.channelplus
+com.tcl.tv.tclhome_passive
+com.tcl.partnercustomizer
+com.tcl.interactive
+com.tcl.messagebox
+com.tcl.waterfall.overseas
+com.tcl.dashboard
+android.autoinstalls.config.google.gtvpai
+com.google.android.partnersetup
