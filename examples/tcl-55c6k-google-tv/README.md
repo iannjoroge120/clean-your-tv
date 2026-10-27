@@ -30,3 +30,11 @@ flashes for half a second on Home before the redirect. Later launcher reinstalls
   binding `CastReceiverService`) kept it at `vis (service)`. In redirect mode launcherx keeps it awake anyway.
 - On macOS the stock `adb` got "No route to host" (Local Network privacy); `tools/tv.py` worked.
 - Everything stayed disabled across three reboots.
+
+## Screenshots
+
+| Before: stock Google TV | After: the clean launcher |
+|---|---|
+| ![Stock Google TV home with sponsored Prime Video rows](screenshots/1-before-google-tv.jpg) | ![Final home: greeting, clock, weather and F1 line, four-app dock](screenshots/4-final-home.jpg) |
+| ![The default red launcher right after install](screenshots/2-clean-launcher.jpg) | ![The App library over Home](screenshots/3-app-library.jpg) |
+| *Default launcher, first install* | *App library: hidden apps one press away* |
