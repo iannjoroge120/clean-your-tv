@@ -41,7 +41,8 @@ public class ClockActivity extends Activity {
         if (getResources().getBoolean(R.bool.clock_keep_screen_on)) {
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         }
-        if (!getString(R.string.football_leagues).trim().isEmpty()) score = findViewById(R.id.dreamScore);
+        if (!getString(R.string.football_leagues).trim().isEmpty() && getSharedPreferences(Config.SETTINGS_NAME, MODE_PRIVATE)
+                .getBoolean(LauncherSettingsActivity.SHOW_FOOTBALL_KEY, true)) score = findViewById(R.id.dreamScore);
     }
 
     /** The live score: every minute around a match, every 15 minutes otherwise, while the clock is on screen. */

@@ -27,6 +27,16 @@ public final class LauncherSettingsActivity extends Activity {
     }
 
     static final String EXTRA_REORDER = "com.gathin.tvhome.extra.REORDER_FROM_SETTINGS";
+    /** Home's snapshot, taken by MainActivity just before it opens this sheet; shown as the preview. */
+    static android.graphics.Bitmap preview;
+    /** On/off switches for what shows on Home; read by MainActivity. Missing means on. */
+    static final String SHOW_WEATHER_KEY = "show_weather";
+    static final String SHOW_F1_KEY = "show_f1";
+    static final String SHOW_FOOTBALL_KEY = "show_football";
+    private final View[] styleCards = new View[3];
+    private static final String[] STYLES = {Config.STYLE_CLASSIC, Config.STYLE_CALM, Config.STYLE_GLASS};
+    private TextView styleDescription;
+    private TextView weatherToggle, f1Toggle, footballToggle;
     private SharedPreferences choices;
     private final TextView[] columnChoices = new TextView[4];
     private final TextView[] rowChoices = new TextView[4];
@@ -49,6 +59,25 @@ public final class LauncherSettingsActivity extends Activity {
         setContentView(R.layout.activity_launcher_settings);
         choices = getSharedPreferences(Config.SETTINGS_NAME, MODE_PRIVATE);
         Config config = Config.load(this);
+        android.widget.ImageView previewView = findViewById(R.id.preview);
+        previewView.setClipToOutline(true);
+        if (preview != null) previewView.setImageBitmap(preview);
+        styleDescription = findViewById(R.id.styleDescription);
+        int[] styleIds = {R.id.styleClassic, R.id.styleCalm, R.id.styleGlass};
+        for (int i = 0; i < styleIds.length; i++) {
+            final String style = STYLES[i];
+            styleCards[i] = findViewById(styleIds[i]);
+            styleCards[i].setOnClickListener(v -> {
+                if (style.equals(currentStyle())) return;
+                choices.edit().putString(Config.STYLE_KEY, style).apply();
+                changed();
+                refresh();
+            });
+        }
+        weatherToggle = toggle(R.id.showWeatherChoice, SHOW_WEATHER_KEY);
+        f1Toggle = toggle(R.id.showF1Choice, SHOW_F1_KEY);
+        footballToggle = toggle(R.id.showFootballChoice, SHOW_FOOTBALL_KEY);
+        findViewById(R.id.doneChoice).setOnClickListener(v -> finish());
         View reorderChoice = findViewById(R.id.reorderChoice);
         reorderChoice.setVisibility(config.launcherSettingsButton ? View.VISIBLE : View.GONE);
         reorderChoice.setOnClickListener(v -> {
@@ -138,7 +167,7 @@ public final class LauncherSettingsActivity extends Activity {
         followThemeChoice = findViewById(R.id.followThemeChoice);
         followThemeChoice.setOnClickListener(v -> {
             if (!hasOnTvChoices()) return;
-            choices.edit().remove("columns").remove(Config.ROWS_BELOW_DOCK_KEY).remove("animations")
+            choices.edit().remove(Config.STYLE_KEY).remove("columns").remove(Config.ROWS_BELOW_DOCK_KEY).remove("animations")
                     .remove("advanced_effects").remove(Config.WALLPAPER_CHOICE_KEY)
                     .remove(Config.DOCK_OPACITY_KEY).remove(OpenOnStart.KEY).commit();
             Config current = Config.load(this);
@@ -157,8 +186,21 @@ public final class LauncherSettingsActivity extends Activity {
         findViewById(R.id.tvSettingsChoice).setOnClickListener(v ->
                 open(SystemSettings.intent(this, Settings.ACTION_SETTINGS)));
         refresh();
-        if (config.launcherSettingsButton) reorderChoice.requestFocus();
-        else columnChoices[Math.max(0, Math.min(columns - 4, 3))].requestFocus();
+        styleCards[Math.max(0, java.util.Arrays.asList(STYLES).indexOf(currentStyle()))].requestFocus();
+    }
+
+    private String currentStyle() {
+        return choices.getString(Config.STYLE_KEY, Config.STYLE_CLASSIC);
+    }
+
+    private TextView toggle(int id, String key) {
+        TextView row = findViewById(id);
+        row.setOnClickListener(v -> {
+            choices.edit().putBoolean(key, !choices.getBoolean(key, true)).apply();
+            changed();
+            refresh();
+        });
+        return row;
     }
 
     private void reverseRow(TextView[] views) {
@@ -277,6 +319,13 @@ public final class LauncherSettingsActivity extends Activity {
     }
 
     private void refresh() {
+        String style = currentStyle();
+        for (int i = 0; i < styleCards.length; i++) styleCards[i].setSelected(STYLES[i].equals(style));
+        styleDescription.setText(Config.STYLE_CALM.equals(style) ? R.string.style_calm_desc
+                : Config.STYLE_GLASS.equals(style) ? R.string.style_glass_desc : R.string.style_classic_desc);
+        weatherToggle.setSelected(choices.getBoolean(SHOW_WEATHER_KEY, true));
+        f1Toggle.setSelected(choices.getBoolean(SHOW_F1_KEY, true));
+        footballToggle.setSelected(choices.getBoolean(SHOW_FOOTBALL_KEY, true));
         for (int i = 0; i < columnChoices.length; i++) {
             columnChoices[i].setSelected(columns == i + 4);
         }
@@ -302,7 +351,7 @@ public final class LauncherSettingsActivity extends Activity {
     }
 
     private boolean hasOnTvChoices() {
-        return choices.contains("columns") || choices.contains(Config.ROWS_BELOW_DOCK_KEY)
+        return choices.contains(Config.STYLE_KEY) || choices.contains("columns") || choices.contains(Config.ROWS_BELOW_DOCK_KEY)
                 || choices.contains("animations") || choices.contains("advanced_effects")
                 || choices.contains(Config.WALLPAPER_CHOICE_KEY) || choices.contains(Config.DOCK_OPACITY_KEY)
                 || choices.contains(OpenOnStart.KEY);

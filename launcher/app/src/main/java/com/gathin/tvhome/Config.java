@@ -43,6 +43,11 @@ final class Config {
     static final String ROWS_BELOW_DOCK_KEY = "rows_below_dock";
     static final String WALLPAPER_CHOICE_KEY = "wallpaper_choice";
     static final String DOCK_OPACITY_KEY = "dock_opacity";
+    /** Launcher settings' style card: a preset layered over the theme. Kept across theme pushes. */
+    static final String STYLE_KEY = "look_style";
+    static final String STYLE_CLASSIC = "classic";
+    static final String STYLE_CALM = "calm";
+    static final String STYLE_GLASS = "glass";
     /**
      * Counts the changes made in Launcher settings. Home remembers the count it was built with and rebuilds on
      * resume when it differs, however the settings were left (see MainActivity#onResume).
@@ -628,6 +633,24 @@ final class Config {
         int wallpaperDim = json == null ? 0 : integer(json, "wallpaper_dim", 0, 0, 90);
         int dockOpacity = json == null ? 100 : integer(json, "dock_opacity", 100, 30, 100);
         dockOpacity = chosenDockOpacity(choices.getInt(DOCK_OPACITY_KEY, -1), dockOpacity);
+        // The style card: Classic is the theme as it is; Calm drops the glow and the big name for a time-of-day
+        // sky; Glass frosts the dock and lights every tile. An explicit dock opacity choice still wins.
+        String style = choices.getString(STYLE_KEY, STYLE_CLASSIC);
+        boolean dockChosen = choices.contains(DOCK_OPACITY_KEY);
+        if (STYLE_CALM.equals(style)) {
+            ambientGlow = false;
+            appGlow = false;
+            dockTitle = false;
+            skyIntensity = 70;
+            dockGlass = true;
+            focusOvershoot = false;
+            if (!dockChosen) dockOpacity = 60;
+        } else if (STYLE_GLASS.equals(style)) {
+            dockGlass = true;
+            appGlow = true;
+            ambientGlow = true;
+            if (!dockChosen) dockOpacity = 50;
+        }
         String wallpaperOrder = json == null ? WallpaperRotation.ORDER_SHUFFLE
                 : string(json, "wallpaper_order", WallpaperRotation.ORDER_SHUFFLE);
         // An unknown order must not silently change how an existing collection rotates.

@@ -23,6 +23,9 @@
   Home of the day plays a short emoji shower. `birthday` ("MM-DD") adds a birthday.
 - **Gear menu**: a Bluetooth row (the TV's Remotes & accessories page). `clock_button` (a moon that opens the clock)
   and `sound_button` exist but are off on this set; Home twice opens the clock.
+- **Launcher settings as a side sheet**, like the phone app's Look sheet: a preview of Home, Classic / Calm / Glass
+  style cards (`look_style`, layered over the theme), pill segments for apps per row, rows and dock opacity,
+  switches for weather, the F1 line and live football, the rarer options under More, and Done.
 - The weather and F1 lines sit on the right under the top buttons, so the clock side stays light.
 
 The TV's list and theme are in [`examples/tcl-55c6k-google-tv`](examples/tcl-55c6k-google-tv/README.md).

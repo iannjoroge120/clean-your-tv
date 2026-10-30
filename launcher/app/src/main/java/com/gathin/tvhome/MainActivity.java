@@ -520,8 +520,12 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         btnWifi = findViewById(R.id.btnWifi);
         shamsiDate = findViewById(R.id.shamsiDate);
         stats = findViewById(R.id.stats);
-        if (!getString(R.string.weather_latitude).trim().isEmpty()) weather = findViewById(R.id.weather);
-        if (!getString(R.string.football_leagues).trim().isEmpty()) football = findViewById(R.id.football);
+        if (!getString(R.string.weather_latitude).trim().isEmpty() && shown(LauncherSettingsActivity.SHOW_WEATHER_KEY)) {
+            weather = findViewById(R.id.weather);
+        }
+        if (!getString(R.string.football_leagues).trim().isEmpty() && shown(LauncherSettingsActivity.SHOW_FOOTBALL_KEY)) {
+            football = findViewById(R.id.football);
+        }
         raceCalendar = cfg.raceCalendar;
         racePanel = findViewById(R.id.racePanel);
         raceKicker = findViewById(R.id.raceKicker);
@@ -753,7 +757,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         }
         btnSettings.setOnClickListener(v -> {
             if (launcherSettingsButton) startActivityForResult(
-                    new Intent(this, LauncherSettingsActivity.class), LAUNCHER_SETTINGS_REQUEST);
+                    launcherSettingsIntent(), LAUNCHER_SETTINGS_REQUEST);
             else open(systemIntent(Settings.ACTION_SETTINGS));
         });
         btnReorder = findViewById(R.id.btnReorder);
@@ -936,10 +940,32 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         return true;
     }
 
+    /** Launcher settings, with a snapshot of Home for the sheet's preview taken first. */
+    private Intent launcherSettingsIntent() {
+        try {
+            View decor = getWindow().getDecorView();
+            int w = decor.getWidth(), h = decor.getHeight();
+            if (w > 0 && h > 0) {
+                Bitmap shot = Bitmap.createBitmap(w / 3, h / 3, Bitmap.Config.ARGB_8888);
+                Canvas canvas = new Canvas(shot);
+                canvas.scale(1f / 3, 1f / 3);
+                decor.draw(canvas);
+                LauncherSettingsActivity.preview = shot;
+            }
+        } catch (RuntimeException | OutOfMemoryError ignored) {
+            // no preview then; the sheet shows an empty frame
+        }
+        return new Intent(this, LauncherSettingsActivity.class);
+    }
+
+    private boolean shown(String key) {
+        return getSharedPreferences(Config.SETTINGS_NAME, MODE_PRIVATE).getBoolean(key, true);
+    }
+
     private boolean openLauncherSettingsIfAsked(Intent intent) {
         if (intent == null || !ACTION_LAUNCHER_SETTINGS.equals(intent.getAction())) return false;
         setIntent(new Intent(Intent.ACTION_MAIN));
-        startActivityForResult(new Intent(this, LauncherSettingsActivity.class), LAUNCHER_SETTINGS_REQUEST);
+        startActivityForResult(launcherSettingsIntent(), LAUNCHER_SETTINGS_REQUEST);
         return true;
     }
 
@@ -2675,7 +2701,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
      */
     private void updateRace() {
         // an empty calendar (a theme without race_calendar, or a reset) hides a panel the last theme showed
-        RaceWeekend.State s = raceCalendar.isEmpty() ? null : RaceWeekend.at(raceCalendar, java.time.Instant.now(),
+        RaceWeekend.State s = raceCalendar.isEmpty() || !shown(LauncherSettingsActivity.SHOW_F1_KEY) ? null
+                : RaceWeekend.at(raceCalendar, java.time.Instant.now(),
                 getResources().getBoolean(R.bool.race_always_on));
         if (s == null) {
             racePanel.setVisibility(View.GONE);
@@ -3475,7 +3502,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         addInputRow(rows, popup, R.drawable.ic_swap_vert, getString(R.string.reorder), -1, this::toggleReorder);
         if (launcherSettingsButton) {
             addInputRow(rows, popup, R.drawable.ic_home_settings_pill, getString(R.string.launcher_settings), -1,
-                    () -> startActivityForResult(new Intent(this, LauncherSettingsActivity.class), LAUNCHER_SETTINGS_REQUEST));
+                    () -> startActivityForResult(launcherSettingsIntent(), LAUNCHER_SETTINGS_REQUEST));
         } else {
             // settings_key_panel: the small quick settings panel, as the remote's Settings button gets.
             addInputRow(rows, popup, R.drawable.ic_settings, getString(R.string.settings), -1,
@@ -3495,7 +3522,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         LinearLayout rows = panel.findViewById(R.id.rows);
         PopupWindow popup = glassPopup(panel, (int) (200 * density));
         if (!launcherSettingsButton) addSettingsMenuRow(rows, popup, R.string.launcher_settings, () -> startActivityForResult(
-                new Intent(this, LauncherSettingsActivity.class), LAUNCHER_SETTINGS_REQUEST));
+                launcherSettingsIntent(), LAUNCHER_SETTINGS_REQUEST));
         // Firmware that ships its own settings app next to the AOSP one (Xiaomi China is one): the
         // vendor app holds pages the AOSP settings has no row for, such as Account & Security with
         // the ADB switch. Offered here only while one of them is installed.
