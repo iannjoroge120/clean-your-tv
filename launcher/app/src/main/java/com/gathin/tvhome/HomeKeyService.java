@@ -319,8 +319,27 @@ public class HomeKeyService extends AccessibilityService {
         }
         // stock_home_redirect: the firmware turned the stock launcher back on and its home screen came up.
         CharSequence cls = event.getClassName();
-        if (!stockHome.isEmpty() && cls != null && stockHome.contains(cls.toString())) openHome();
+        if (cls == null) return;
+        // Google TV's own "choose an app for this button" picker (the remote's assignable button) opens over its
+        // home screen; leave it up instead of covering it, and hold the redirect while it is being used.
+        if (stockHomePackage.contentEquals(event.getPackageName() == null ? "" : event.getPackageName())
+                && cls.toString().contains(".magicbutton.")) {
+            handler.removeCallbacks(redirectHome);
+            stockPickerUntil = SystemClock.elapsedRealtime() + STOCK_PICKER_HOLD_MS;
+            return;
+        }
+        if (!stockHome.isEmpty() && stockHome.contains(cls.toString())
+                && SystemClock.elapsedRealtime() >= stockPickerUntil) {
+            handler.removeCallbacks(redirectHome);
+            handler.postDelayed(redirectHome, STOCK_REDIRECT_DELAY_MS);
+        }
     }
+
+    /** The redirect waits this long, so a picker opening over the stock home can still call it off. */
+    private static final long STOCK_REDIRECT_DELAY_MS = 250;
+    private static final long STOCK_PICKER_HOLD_MS = 3000;
+    private long stockPickerUntil;
+    private final Runnable redirectHome = this::openHome;
 
     /** How long power_on_home stays armed after the screen turns on without a reboot. */
     static final long SCREEN_ON_WINDOW_MS = 60 * 1000L;

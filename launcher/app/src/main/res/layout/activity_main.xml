@@ -333,6 +333,26 @@
                     android:letterSpacing="0.12" />
             </LinearLayout>
 
+            <!-- The optional live football score (football_leagues), under the F1 line, or under the weather while
+                 there is no race calendar. Shown only while a match is in play. -->
+            <TextView
+                android:id="@+id/football"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/racePanel"
+                android:layout_alignEnd="@id/topButtons"
+                android:layout_marginTop="10dp"
+                android:layout_marginEnd="4dp"
+                android:gravity="right"
+                android:singleLine="true"
+                android:textColor="#B3FFFFFF"
+                android:textSize="12sp"
+                android:fontFamily="@string/font_medium"
+                android:letterSpacing="0.22"
+                android:textAllCaps="true"
+                android:focusable="false"
+                android:visibility="gone" />
+
             <LinearLayout
                 android:id="@+id/topButtons"
                 android:layout_width="wrap_content"

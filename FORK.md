@@ -9,6 +9,15 @@
   `launcher/app/src/main/res/values/config.xml`; an empty latitude turns it off. This adds the INTERNET permission.
 - **F1 line**: `race_always_on` keeps the race panel up between weekends, and `race_one_line` makes it one small
   line under the weather that alternates the next session's countdown and the race time.
+- **Live football** (`Football`): one line under the F1 line, e.g. `⚽ CHE 1–0 MAN · 34'`, only while an EPL or
+  Champions League match is in play (the biggest one when several are), from ESPN's public scoreboard. Set
+  `football_leagues` in `config.xml`; empty turns it off. Polled every minute around a match, every 15 minutes
+  otherwise, only while Home or its clock is on screen.
+- **Home again opens the clock** (`home_again_clock`): Home while Home is on screen, or Home twice from an app, opens
+  the clock screen, which stays up until a key is pressed and keeps the TV awake (`clock_keep_screen_on`). It shows
+  the live score too.
+- **Google TV's button picker** is left up in `stock_home_redirect` mode, so the remote's assignable button can be
+  set from Google's own list.
 - The weather and F1 lines sit on the right under the top buttons, so the clock side stays light.
 
 The TV's list and theme are in [`examples/tcl-55c6k-google-tv`](examples/tcl-55c6k-google-tv/README.md).

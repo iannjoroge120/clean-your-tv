@@ -61,5 +61,21 @@
             android:fontFamily="@string/font_regular"
             android:letterSpacing="0.14"
             android:textAllCaps="true" />
+
+        <!-- The live football score (football_leagues), only in the Home clock (ClockActivity) and only while a
+             match is in play. -->
+        <TextView
+            android:id="@+id/dreamScore"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_marginTop="14dp"
+            android:singleLine="true"
+            android:textColor="#B3FFFFFF"
+            android:textSize="18sp"
+            android:fontFamily="@string/font_medium"
+            android:letterSpacing="0.14"
+            android:textAllCaps="true"
+            android:visibility="gone" />
     </LinearLayout>
 </FrameLayout>

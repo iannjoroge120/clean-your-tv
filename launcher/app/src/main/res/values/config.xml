@@ -426,6 +426,16 @@
     <!-- With race_calendar set: true keeps the F1 panel under the clock all the time, showing the next race and
          its countdown, instead of only from 12 hours before a weekend. -->
     <bool name="race_always_on">true</bool>
+
+    <!-- Live football: ESPN scoreboard league slugs, comma-separated (eng.1 Premier League, uefa.champions Champions
+         League). Only a match in play is shown, the biggest one when several are; nothing while none is. Polled every
+         minute around a match and every 15 minutes otherwise, only while Home is on screen. Empty: off. -->
+    <string name="football_leagues" translatable="false">eng.1,uefa.champions</string>
+
+    <!-- Home pressed while Home is already on screen opens the clock screen. -->
+    <bool name="home_again_clock">true</bool>
+    <!-- The Home clock screen keeps the TV awake (no sleep timer while it is up); it drifts, so nothing burns in. -->
+    <bool name="clock_keep_screen_on">true</bool>
     <!-- true: the F1 panel is one small line that alternates the next session's countdown and the race time,
          instead of the headline and the row of sessions. -->
     <bool name="race_one_line">true</bool>

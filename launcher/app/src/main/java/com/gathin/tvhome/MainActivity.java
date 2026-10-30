@@ -194,6 +194,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private TextView weather;
     private long weatherFetchedAt;
     private boolean weatherFetching;
+    /** config.xml football_leagues; null: the score line is off. */
+    private TextView football;
+    private long footballFetchedAt;
+    private boolean footballFetching, footballBusy;
     private List<RaceWeekend.Race> raceCalendar;
     private View racePanel;
     private TextView raceKicker, raceHeadline, raceSessions;
@@ -379,6 +383,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             updateGreeting();
             updateRace();
             refreshWeather();
+            refreshFootball();
             // The pill follows the network callbacks and each return to Home; only the diya's flame follows the
             // signal level, so only it needs this minute's binder calls (about 7 ms on the UI thread).
             if (festive) updateWifiLabel();
@@ -498,6 +503,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         shamsiDate = findViewById(R.id.shamsiDate);
         stats = findViewById(R.id.stats);
         if (!getString(R.string.weather_latitude).trim().isEmpty()) weather = findViewById(R.id.weather);
+        if (!getString(R.string.football_leagues).trim().isEmpty()) football = findViewById(R.id.football);
         raceCalendar = cfg.raceCalendar;
         racePanel = findViewById(R.id.racePanel);
         raceKicker = findViewById(R.id.raceKicker);
@@ -921,6 +927,13 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         if (openLauncherSettingsIfAsked(intent)) return;
         if (openInputsIfAsked(intent)) return;
         if (intent == null || !intent.hasCategory(Intent.CATEGORY_HOME)) return;
+        if (homeAgainOpensClock()) {
+            if (clockOpenedAt == 0 || SystemClock.elapsedRealtime() - clockOpenedAt >= 3000) {
+                clockOpenedAt = SystemClock.elapsedRealtime();
+            }
+            startActivity(new Intent(this, ClockActivity.class));
+            return;
+        }
         grid.scrollToPosition(0);
         lastFocused = 0;
         lastFocusedKey = adapter.getItemCount() > 0 ? adapter.keyAt(0) : null;
@@ -931,6 +944,21 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             // so only go back to the first one; rebuilding would replay the entrance animation for nothing.
             grid.post(() -> focusTile(0));
         }
+    }
+
+    /** config.xml home_again_clock: Home while Home is on screen opens the clock, and the clock stays up. In
+     *  stock_home_redirect mode each press shows the stock home for a moment, so a press counts when Home was
+     *  paused under two seconds ago after being up for at least 250 ms (a second redirect from the same press
+     *  arrives while Home is still up and is ignored). A redirect in the first seconds of the clock reopens it. */
+    private long homeResumedAt, homePausedAt, clockOpenedAt;
+    private boolean homeResumed;
+
+    private boolean homeAgainOpensClock() {
+        if (!getResources().getBoolean(R.bool.home_again_clock)) return false;
+        long now = SystemClock.elapsedRealtime();
+        if (clockOpenedAt != 0 && now - clockOpenedAt < 3000) return true;
+        if (homeResumed) return now - homeResumedAt >= 1500;
+        return homePausedAt > homeResumedAt && now - homePausedAt < 2000 && homePausedAt - homeResumedAt >= 250;
     }
 
     @Override
@@ -992,8 +1020,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             updateInputsButton();
             pillsShown = true;
         }
+        homeResumed = true;
+        homeResumedAt = SystemClock.elapsedRealtime();
         if (showStats) startStats();
         refreshWeather();
+        refreshFootball();
         sky.update();
         wallpaperPlayer.start();
         handler.postDelayed(minuteTick, MINUTE_MS);
@@ -1162,6 +1193,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     @Override
     protected void onPause() {
         super.onPause();
+        homeResumed = false;
+        homePausedAt = SystemClock.elapsedRealtime();
         root.removeCallbacks(showIdleClock);
         endReorder();   // Home or another app while reordering keeps the order so far
         wallpaperPlayer.stop();
@@ -2083,6 +2116,33 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                 weather.setVisibility(View.VISIBLE);
             });
         }, "weather").start();
+    }
+
+    // ---- optional live football score (config.xml football_leagues) -------------------------------
+
+    /** Every minute around a match, every 15 minutes otherwise; a failed fetch keeps the line and retries next tick. */
+    private void refreshFootball() {
+        if (football == null || footballFetching) return;
+        long every = footballBusy ? Football.LIVE_MS : Football.IDLE_MS;
+        // a few seconds' slack, so a minute tick that lands just early still counts as a minute
+        if (footballFetchedAt != 0 && SystemClock.elapsedRealtime() - footballFetchedAt < every - 5000) return;
+        footballFetching = true;
+        String leagues = getString(R.string.football_leagues);
+        new Thread(() -> {
+            Football.Result r = Football.fetch(leagues);
+            handler.post(() -> {
+                footballFetching = false;
+                if (r == null) return;
+                footballFetchedAt = SystemClock.elapsedRealtime();
+                footballBusy = r.busy;
+                if (r.line == null) {
+                    football.setVisibility(View.GONE);
+                } else {
+                    football.setText(r.line);
+                    football.setVisibility(View.VISIBLE);
+                }
+            });
+        }, "football").start();
     }
 
     // ---- optional system stats (config.xml show_stats) --------------------------------------------
