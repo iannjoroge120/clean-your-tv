@@ -168,7 +168,7 @@
   ],
   "top_menu": true,
   "icon_only_buttons": true,
-  "library_button": true,
+  "library_button": false,
   "show_library_pill": true,
   "settings_key_panel": true
 }

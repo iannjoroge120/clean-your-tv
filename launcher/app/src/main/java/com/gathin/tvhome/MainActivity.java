@@ -394,6 +394,24 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     };
 
     private java.util.Map<Integer, String> homeAppKeys = java.util.Collections.emptyMap();
+    private static final Set<Integer> HOME_MAPPABLE = new HashSet<>(Arrays.asList(
+            KeyEvent.KEYCODE_CHANNEL_UP, KeyEvent.KEYCODE_CHANNEL_DOWN, KeyEvent.KEYCODE_INFO));
+
+    /** Bluetooth pairing and devices: the TV's Remotes & accessories page, else Android's Bluetooth settings. */
+    private Intent bluetoothSettingsIntent() {
+        Intent accessories = new Intent("com.android.tv.settings.ACCESSORIES_CONNECTED_DEVICES");
+        if (getPackageManager().resolveActivity(accessories, 0) != null) return accessories;
+        return systemIntent(Settings.ACTION_BLUETOOTH_SETTINGS);
+    }
+
+    /** The TV's sound output page: TCL's own when it has one, else Android's sound settings. */
+    private Intent soundSettingsIntent() {
+        for (String action : new String[] {"com.android.tv.settings.SOUND_OUTPUT", "android.settings.SOUND_SETTINGS"}) {
+            Intent i = new Intent(action);
+            if (getPackageManager().resolveActivity(i, 0) != null) return i;
+        }
+        return systemIntent(Settings.ACTION_SETTINGS);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -753,6 +771,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         View btnClock = findViewById(R.id.btnClock);
         btnClock.setOnClickListener(v -> startActivity(new Intent(this, ClockActivity.class)));
         btnClock.setVisibility(getResources().getBoolean(R.bool.clock_button) ? View.VISIBLE : View.GONE);
+        View btnSound = findViewById(R.id.btnSound);
+        btnSound.setOnClickListener(v -> open(soundSettingsIntent()));
+        btnSound.setVisibility(getResources().getBoolean(R.bool.sound_button) ? View.VISIBLE : View.GONE);
         addTopBarApps(cfg.topBarApps, cfg.launchActions);
         iconOnlyButtons = cfg.iconOnlyButtons;
         topMenu = cfg.topMenu;
@@ -818,10 +839,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         btnReorder.setOnKeyListener(pillKeys);
         btnLibraryTop.setOnKeyListener(pillKeys);
         findViewById(R.id.btnClock).setOnKeyListener(pillKeys);
+        findViewById(R.id.btnSound).setOnKeyListener(pillKeys);
         for (View button : topAppButtons) button.setOnKeyListener(pillKeys);
         if (advancedEffects) {
             List<View> pills = new ArrayList<>(Arrays.asList(btnInputs, btnWifi, btnVpn, btnReorder,
-                    findViewById(R.id.btnClock), btnLibraryTop, btnSettings));
+                    findViewById(R.id.btnClock), findViewById(R.id.btnSound), btnLibraryTop, btnSettings));
             pills.addAll(topAppButtons);
             for (View button : pills) {
                 button.setOnFocusChangeListener((view, focused) -> view.animate()
@@ -1312,7 +1334,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
         // Vendor keys (TCL Netflix button, 4062) never reach the key services, only the focused window.
-        if (event.getKeyCode() >= 1000 && RemoteKeys.handle(this, event, homeAppKeys.get(event.getKeyCode()), null)) return true;
+        // Vendor buttons, and the few standard ones a remote sends that Home has no use for (channel up / down,
+        // info), open what app_keys maps them to while Home is in front, with no key-filtering helper.
+        if ((event.getKeyCode() >= 1000 || HOME_MAPPABLE.contains(event.getKeyCode()))
+                && RemoteKeys.handle(this, event, homeAppKeys.get(event.getKeyCode()), null)) return true;
         if (handleSettingsKey(event)) return true;
         if (tileMenuEnabled && !reordering && openPopup == null && cardPrompt == null
                 && event.getKeyCode() == KeyEvent.KEYCODE_MENU) {
@@ -3445,6 +3470,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             status.setText(network);
             status.setVisibility(View.VISIBLE);
         }
+        addInputRow(rows, popup, R.drawable.ic_bluetooth, getString(R.string.bluetooth), -1,
+                () -> open(bluetoothSettingsIntent()));
         addInputRow(rows, popup, R.drawable.ic_swap_vert, getString(R.string.reorder), -1, this::toggleReorder);
         if (launcherSettingsButton) {
             addInputRow(rows, popup, R.drawable.ic_home_settings_pill, getString(R.string.launcher_settings), -1,

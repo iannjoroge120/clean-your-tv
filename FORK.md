@@ -21,7 +21,8 @@
 - **Seasonal easter eggs** (`Seasons`, `seasonal_eggs`): on Halloween, Christmas, New Year, Valentine's, Easter and
   Kenya's Madaraka, Mashujaa and Jamhuri Day the greeting turns festive ("HAPPY HALLOWEEN, IAN 🎃") and the first
   Home of the day plays a short emoji shower. `birthday` ("MM-DD") adds a birthday.
-- **Clock button** (`clock_button`): a moon in the top bar that opens the clock screen.
+- **Gear menu**: a Bluetooth row (the TV's Remotes & accessories page). `clock_button` (a moon that opens the clock)
+  and `sound_button` exist but are off on this set; Home twice opens the clock.
 - The weather and F1 lines sit on the right under the top buttons, so the clock side stays light.
 
 The TV's list and theme are in [`examples/tcl-55c6k-google-tv`](examples/tcl-55c6k-google-tv/README.md).
