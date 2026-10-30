@@ -750,6 +750,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             libraryFromTopBar = true;   // closing it goes back to this button, not to the pill after the last row
         });
         btnLibraryTop.setVisibility(cfg.libraryButton && cfg.appLibrary ? View.VISIBLE : View.GONE);
+        View btnClock = findViewById(R.id.btnClock);
+        btnClock.setOnClickListener(v -> startActivity(new Intent(this, ClockActivity.class)));
+        btnClock.setVisibility(getResources().getBoolean(R.bool.clock_button) ? View.VISIBLE : View.GONE);
         addTopBarApps(cfg.topBarApps, cfg.launchActions);
         iconOnlyButtons = cfg.iconOnlyButtons;
         topMenu = cfg.topMenu;
@@ -814,9 +817,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         btnSettings.setOnKeyListener(pillKeys);
         btnReorder.setOnKeyListener(pillKeys);
         btnLibraryTop.setOnKeyListener(pillKeys);
+        findViewById(R.id.btnClock).setOnKeyListener(pillKeys);
         for (View button : topAppButtons) button.setOnKeyListener(pillKeys);
         if (advancedEffects) {
-            List<View> pills = new ArrayList<>(Arrays.asList(btnInputs, btnWifi, btnVpn, btnReorder, btnLibraryTop, btnSettings));
+            List<View> pills = new ArrayList<>(Arrays.asList(btnInputs, btnWifi, btnVpn, btnReorder,
+                    findViewById(R.id.btnClock), btnLibraryTop, btnSettings));
             pills.addAll(topAppButtons);
             for (View button : pills) {
                 button.setOnFocusChangeListener((view, focused) -> view.animate()
@@ -1028,6 +1033,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         sky.update();
         wallpaperPlayer.start();
         handler.postDelayed(minuteTick, MINUTE_MS);
+        Seasons season = festive ? null : season();
+        if (season != null && !reducedMotion && !LocalDate.now().equals(lastSeasonShower)) {
+            lastSeasonShower = LocalDate.now();
+            handler.postDelayed(() -> playSeasonShower(season), 450);
+        }
         if (festive && diya != null) {
             diya.start();
             LocalDate today = LocalDate.now();
@@ -2613,9 +2623,14 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             else res = R.string.good_night;
         }
         String festiveGreeting = festive ? festival.greetingText(getResources()) : "";
+        Seasons season = festive ? null : season();
         if (!festiveGreeting.isEmpty()) {
             greeting.setText(festiveGreeting);
             greeting.setTextColor(liftTowardsWhite(festival.accentColor(), 0.25f));
+        } else if (season != null) {
+            greeting.setText((greetingName.isEmpty() ? season.greeting
+                    : getString(R.string.greeting_with_name, season.greeting, greetingName)) + "  " + season.emoji);
+            greeting.setTextColor(liftTowardsWhite(season.accent, 0.25f));
         } else {
             greeting.setText(greetingName.isEmpty() ? getString(res)
                     : getString(R.string.greeting_with_name, getString(res), greetingName));
@@ -2908,6 +2923,22 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             if (previous != null) previous.onFocusChange(v, focused);
             if (focused) action.run();
         });
+    }
+
+    /** config.xml seasonal_eggs: today's season (Halloween, Christmas, ...), or null. */
+    private Seasons season() {
+        if (!getResources().getBoolean(R.bool.seasonal_eggs)) return null;
+        return Seasons.today(LocalDate.now(), getString(R.string.birthday));
+    }
+
+    private static LocalDate lastSeasonShower;
+
+    private void playSeasonShower(Seasons season) {
+        if (isFinishing() || isDestroyed()) return;
+        EmojiShowerView shower = new EmojiShowerView(this);
+        root.addView(shower, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        shower.play(season.shower, 36, 2600, () -> root.removeView(shower));
     }
 
     private void playPetalShower() {
@@ -3419,8 +3450,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             addInputRow(rows, popup, R.drawable.ic_home_settings_pill, getString(R.string.launcher_settings), -1,
                     () -> startActivityForResult(new Intent(this, LauncherSettingsActivity.class), LAUNCHER_SETTINGS_REQUEST));
         } else {
+            // settings_key_panel: the small quick settings panel, as the remote's Settings button gets.
             addInputRow(rows, popup, R.drawable.ic_settings, getString(R.string.settings), -1,
-                    () -> open(systemIntent(Settings.ACTION_SETTINGS)));
+                    () -> open(settingsKeyPanel ? new Intent(this, QuickSettingsActivity.class)
+                            : systemIntent(Settings.ACTION_SETTINGS)));
         }
         panel.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
         popup.setWidth(Math.max((int) (220 * density), Math.min(panel.getMeasuredWidth(), (int) (360 * density))));

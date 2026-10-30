@@ -434,6 +434,14 @@
 
     <!-- Home pressed while Home is already on screen opens the clock screen. -->
     <bool name="home_again_clock">true</bool>
+    <!-- A round moon button in the top bar that opens the clock screen. -->
+    <bool name="clock_button">true</bool>
+
+    <!-- Seasonal easter eggs by date (Seasons): Halloween, Christmas, New Year, Valentine's, Easter, Madaraka,
+         Mashujaa and Jamhuri Day. The greeting turns festive and the first Home of the day plays a short emoji
+         shower. birthday ("MM-DD") adds one more; empty for none. -->
+    <bool name="seasonal_eggs">true</bool>
+    <string name="birthday" translatable="false"></string>
     <!-- The Home clock screen keeps the TV awake (no sleep timer while it is up); it drifts, so nothing burns in. -->
     <bool name="clock_keep_screen_on">true</bool>
     <!-- true: the F1 panel is one small line that alternates the next session's countdown and the race time,
